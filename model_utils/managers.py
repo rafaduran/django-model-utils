@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 import django
 from django.db import models
+from django.db import router
 from django.db.models.fields.related import OneToOneField
+from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
 from django.db.models.query import QuerySet
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -201,3 +203,14 @@ def create_pass_through_manager_for_queryset_class(base, queryset_cls):
 def unpickle_pass_through_manager_for_queryset_class(base, queryset_cls):
     cls = create_pass_through_manager_for_queryset_class(base, queryset_cls)
     return cls.__new__(cls)
+
+
+class InheritanceReverseSingleRelatedObjectDescriptor(ReverseSingleRelatedObjectDescriptor):
+    # Overrides super so it returns subclasses instances instead.
+    # In the example "choice.poll", the poll attribute is a
+    # InheritanceReverseSingleRelatedObjectDescriptor instance, returning
+    # subclasses.
+    def get_query_set(self, **db_hints):
+        '''Overrides super so it returns subclasses instances.'''
+        db = router.db_for_read(self.field.rel.to, **db_hints)
+        return InheritanceQuerySet(self.field.rel.to).using(db).select_subclasses()

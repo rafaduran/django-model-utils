@@ -1,9 +1,13 @@
 from __future__ import unicode_literals
 
+import django
 from django.db import models
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.timezone import now
+
+
+from model_utils import managers
 
 
 class AutoCreatedField(models.DateTimeField):
@@ -204,6 +208,26 @@ class SplitField(models.TextField):
             return value.content
         except AttributeError:
             return value
+
+
+class InheritanceForeignKey(models.ForeignKey):
+    '''A foreign class returnning subclasses instances for related fields.'''
+    if django.VERSION < (1, 6, 0):
+        def contribute_to_class(self, cls, name):
+            from django.utils import six
+            models.ForeignKey.contribute_to_class(self, cls, name)
+            setattr(cls, self.name,
+                    managers.InheritanceReverseSingleRelatedObjectDescriptor(self))
+            if isinstance(self.rel.to, six.string_types):
+                target = self.rel.to
+            else:
+                target = self.rel.to._meta.db_table
+            cls._meta.duplicate_targets[self.column] = (target, "o2m")
+    else:
+        def contribute_to_class(self, cls, name, virtual_only=False):
+            from django.db.models.fields import related
+            related.ForeignObject.contribute_to_class(self, cls, name, virtual_only=virtual_only)
+            setattr(cls, self.name, managers.InheritanceReverseSingleRelatedObjectDescriptor(self))
 
 
 # allow South to handle these fields smoothly

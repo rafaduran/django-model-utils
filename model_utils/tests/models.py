@@ -4,7 +4,8 @@ from django.utils.translation import ugettext_lazy as _
 from model_utils.models import TimeStampedModel, StatusModel, TimeFramedModel
 from model_utils.tracker import ModelTracker
 from model_utils.managers import QueryManager, InheritanceManager, PassThroughManager
-from model_utils.fields import SplitField, MonitorField, StatusField
+from model_utils.fields import (
+    SplitField, MonitorField, StatusField, InheritanceForeignKey)
 from model_utils import Choices
 
 
@@ -251,3 +252,19 @@ class StatusFieldDefaultFilled(models.Model):
 class StatusFieldDefaultNotFilled(models.Model):
     STATUS = Choices((0, "no", "No"), (1, "yes", "Yes"))
     status = StatusField()
+
+
+class Parent(models.Model):
+    pass
+
+
+class Child1(Parent):
+    pass
+
+
+class Child2(Parent):
+    pass
+
+
+class Related(models.Model):
+    inherited = InheritanceForeignKey(Parent)

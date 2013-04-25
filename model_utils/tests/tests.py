@@ -21,7 +21,7 @@ from model_utils.tests.models import (
     StatusPlainTuple, TimeFrame, Monitored, StatusManagerAdded,
     TimeFrameManagerAdded, Dude, SplitFieldAbstractParent, Car, Spot,
     Tracked, TrackedNotDefault, TrackedMultiple, StatusFieldDefaultFilled,
-    StatusFieldDefaultNotFilled)
+    StatusFieldDefaultNotFilled, Child1, Child2, Related)
 
 
 
@@ -899,3 +899,19 @@ class FieldTrackedModelMultiTests(ModelTrackerTestCase,
         self.instance.save()
         self.assertCurrent(tracker=self.trackers[0], name='new age')
         self.assertCurrent(tracker=self.trackers[1], number=8)
+
+
+class InheritanceFoerignKeyTests(TestCase):
+    def setUp(self):
+        super(InheritanceFoerignKeyTests, self).setUp()
+        self.child1 = Child1.objects.create()
+        self.child2 = Child2.objects.create()
+        self.related1 = Related.objects.create(inherited=self.child1)
+        self.related2 = Related.objects.create(inherited=self.child2)
+
+    def test_inherited_type(self):
+        related1 = Related.objects.get(pk=self.related1.pk)
+        self.assertEqual(type(related1.inherited), Child1)
+
+        related2 = Related.objects.get(pk=self.related2.pk)
+        self.assertEqual(type(related2.inherited), Child2)
